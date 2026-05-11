@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "author": "Braulio Matheus Brito Barbosa",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-s3-devkitc-1",
+      "id": "esp",
+      "top": -0.18,
+      "left": 4.57,
+      "attrs": { "builder": "esp-idf" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 169.4,
+      "left": -134.4,
+      "attrs": { "color": "green", "xray": "1" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": 44.4,
+      "left": -130.6,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 80.75,
+      "left": -96,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r2",
+      "top": 234.35,
+      "left": -105.6,
+      "attrs": { "value": "10000" }
+    },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": -30.1, "left": 134.2, "attrs": {} }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "esp:GND.2", "pot1:GND", "black", [ "v-0.18", "h33.37", "v48", "h38.4" ] ],
+    [ "pot1:SIG", "esp:1", "green", [ "v19.2", "h-58" ] ],
+    [
+      "pot1:VCC",
+      "esp:3V3.1",
+      "red",
+      [ "v28.8", "h47.2", "v-115.2", "h-249.6", "v57.6", "h28.85" ]
+    ],
+    [ "r1:1", "led1:A", "green", [ "v0" ] ],
+    [ "esp:GND.1", "led1:C", "black", [ "h-14.68", "v38.22", "h-211.2", "v-182.4" ] ],
+    [ "r1:2", "esp:18", "green", [ "v0", "h18", "v38.4" ] ],
+    [ "esp:4", "r2:1", "cyan", [ "h-28.85", "v163.2", "h-86.4" ] ],
+    [ "esp:3V3.2", "btn1:2.r", "red", [ "h-38.45", "v9.6" ] ],
+    [ "esp:GND.1", "r2:2", "black", [ "h0" ] ],
+    [ "r2:1", "btn1:1.r", "green", [ "v0", "h-57.6", "v-96", "h115.2" ] ]
+  ],
+  "dependencies": {}
+}
