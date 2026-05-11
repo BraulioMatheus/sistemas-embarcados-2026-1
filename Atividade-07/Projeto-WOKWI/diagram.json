@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "author": "Braulio Matheus Brito Barbosa",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-s3-devkitc-1",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": { "builder": "esp-idf" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led1",
+      "top": 37.2,
+      "left": 179.4,
+      "rotate": 90,
+      "attrs": { "color": "red" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 23.15,
+      "left": 105.6,
+      "attrs": { "value": "220" }
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "r1:1", "esp:GND.2", "green", [ "v0" ] ],
+    [ "led1:C", "r1:2", "green", [ "h0", "v-28.4" ] ],
+    [ "led1:A", "esp:4", "green", [ "h0", "v19.2", "h48", "v-96", "h-249.6", "v67.2" ] ],
+    [ "esp:16", "esp:17", "green", [ "h-24.28", "v9.42" ] ]
+  ],
+  "dependencies": {}
+}
