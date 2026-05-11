@@ -1,63 +1,112 @@
-{
-  "version": 1,
-  "author": "Braulio Matheus Brito Barbosa",
-  "editor": "wokwi",
-  "parts": [
-    {
-      "type": "board-esp32-s3-devkitc-1",
-      "id": "esp",
-      "top": -0.18,
-      "left": 4.57,
-      "attrs": { "builder": "esp-idf" }
-    },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn1",
-      "top": 169.4,
-      "left": -134.4,
-      "attrs": { "color": "green", "xray": "1" }
-    },
-    {
-      "type": "wokwi-led",
-      "id": "led1",
-      "top": 44.4,
-      "left": -130.6,
-      "attrs": { "color": "red" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "r1",
-      "top": 80.75,
-      "left": -96,
-      "attrs": { "value": "220" }
-    },
-    {
-      "type": "wokwi-resistor",
-      "id": "r2",
-      "top": 234.35,
-      "left": -105.6,
-      "attrs": { "value": "10000" }
-    },
-    { "type": "wokwi-potentiometer", "id": "pot1", "top": -30.1, "left": 134.2, "attrs": {} }
-  ],
-  "connections": [
-    [ "esp:TX", "$serialMonitor:RX", "", [] ],
-    [ "esp:RX", "$serialMonitor:TX", "", [] ],
-    [ "esp:GND.2", "pot1:GND", "black", [ "v-0.18", "h33.37", "v48", "h38.4" ] ],
-    [ "pot1:SIG", "esp:1", "green", [ "v19.2", "h-58" ] ],
-    [
-      "pot1:VCC",
-      "esp:3V3.1",
-      "red",
-      [ "v28.8", "h47.2", "v-115.2", "h-249.6", "v57.6", "h28.85" ]
-    ],
-    [ "r1:1", "led1:A", "green", [ "v0" ] ],
-    [ "esp:GND.1", "led1:C", "black", [ "h-14.68", "v38.22", "h-211.2", "v-182.4" ] ],
-    [ "r1:2", "esp:18", "green", [ "v0", "h18", "v38.4" ] ],
-    [ "esp:4", "r2:1", "cyan", [ "h-28.85", "v163.2", "h-86.4" ] ],
-    [ "esp:3V3.2", "btn1:2.r", "red", [ "h-38.45", "v9.6" ] ],
-    [ "esp:GND.1", "r2:2", "black", [ "h0" ] ],
-    [ "r2:1", "btn1:1.r", "green", [ "v0", "h-57.6", "v-96", "h115.2" ] ]
-  ],
-  "dependencies": {}
+#include <stdio.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "driver/ledc.h"
+#include "driver/gpio.h"
+#include "esp_adc/adc_oneshot.h"
+
+#define ADC_CHANNEL ADC_CHANNEL_0   // GPIO1
+#define BUTTON_GPIO GPIO_NUM_4
+#define LED_GPIO GPIO_NUM_18
+
+#define LIVE 0
+#define HOLD 1
+
+int state = LIVE;
+int last_adc = 0;
+
+adc_oneshot_unit_handle_t adc_handle;
+
+// ================= ADC =================
+void config_adc() {
+    adc_oneshot_unit_init_cfg_t init_config = {
+        .unit_id = ADC_UNIT_1,
+    };
+    adc_oneshot_new_unit(&init_config, &adc_handle);
+
+    adc_oneshot_chan_cfg_t config = {
+        .atten = ADC_ATTEN_DB_12,
+        .bitwidth = ADC_BITWIDTH_12
+    };
+
+    adc_oneshot_config_channel(adc_handle, ADC_CHANNEL, &config);
+}
+
+// ================= PWM =================
+void config_pwm() {
+    ledc_timer_config_t timer = {
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .timer_num = LEDC_TIMER_0,
+        .duty_resolution = LEDC_TIMER_13_BIT,
+        .freq_hz = 5000,
+        .clk_cfg = LEDC_AUTO_CLK
+    };
+    ledc_timer_config(&timer);
+
+    ledc_channel_config_t channel = {
+        .gpio_num = LED_GPIO,
+        .speed_mode = LEDC_LOW_SPEED_MODE,
+        .channel = LEDC_CHANNEL_0,
+        .timer_sel = LEDC_TIMER_0,
+        .duty = 0,
+        .hpoint = 0
+    };
+    ledc_channel_config(&channel);
+}
+
+// ================= BOTÃO =================
+void config_button() {
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << BUTTON_GPIO),
+        .mode = GPIO_MODE_INPUT,
+        .pull_down_en = 0, // usando resistor externo (r2)
+        .pull_up_en = 0,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+    gpio_config(&io_conf);
+}
+
+// ================= MAIN =================
+void app_main() {
+    config_adc();
+    config_pwm();
+    config_button();
+
+    int button_last = 0;
+
+    while (1) {
+        int button = gpio_get_level(BUTTON_GPIO);
+
+        // Alterna HOLD/LIVE (detecção de borda)
+        if (button == 1 && button_last == 0) {
+            state = !state;
+            vTaskDelay(pdMS_TO_TICKS(200)); // debounce simples
+        }
+        button_last = button;
+
+        int adc_value;
+
+        if (state == LIVE) {
+            adc_oneshot_read(adc_handle, ADC_CHANNEL, &adc_value);
+            last_adc = adc_value;
+        } else {
+            adc_value = last_adc;
+        }
+
+        // Conversão
+        int voltage = (adc_value * 3300) / 4095;
+        int duty = (adc_value * 8191) / 4095;
+
+        // PWM
+        ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, duty);
+        ledc_update_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0);
+
+        // Monitoramento
+        printf("ADC: %d | Tensão: %d mV | Estado: %s\n",
+               adc_value,
+               voltage,
+               state == LIVE ? "LIVE" : "HOLD");
+
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
 }
