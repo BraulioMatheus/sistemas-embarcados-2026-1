@@ -67,3 +67,6 @@ Monitoramento via terminal
 Modo LIVE: LED acompanha o potenciômetro  
 Modo HOLD: valor congelado  
 Botão alterna entre os modos  
+
+Link da Simulação Wokwi:  
+https://wokwi.com/projects/463266601944795137
