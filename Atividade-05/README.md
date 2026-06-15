@@ -39,6 +39,7 @@ Se o LED estiver ligado:
 Um temporizador é iniciado
 Após 10 segundos:
 O LED é desligado automaticamente
+
 ⚙️ Tratamento de Bounce
 
 Botões mecânicos geram ruídos elétricos (bounce), causando múltiplas leituras.
@@ -48,7 +49,9 @@ Para resolver isso, foi implementado:
 Detecção de mudança de estado
 Aguardar 50 ms
 Confirmar estabilidade do sinal antes de aceitar o clique
+
 🧪 Exemplo de Saída Serial
+
 Sistema iniciado.
 LED inicia apagado.
 Pressione o botao para alternar o LED.
@@ -56,7 +59,9 @@ Desligamento automatico em 10 segundos.
 
 LED ligado.
 LED desligado automaticamente apos 10 segundos.
+
 🖥️ Tecnologias Utilizadas
+
 ESP-IDF (framework oficial da Espressif)
 FreeRTOS
 GPIO Driver
